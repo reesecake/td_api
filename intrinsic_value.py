@@ -1,8 +1,12 @@
 import json
+import os
+from datetime import datetime, timedelta
 import requests
+import pandas as pd
 from bs4 import BeautifulSoup
 
 from util.Data import get_fundamentals
+from util.misc import get_project_root
 
 
 def get_growth_rate(symbol):
@@ -40,10 +44,28 @@ def get_growth_rate(symbol):
     return growth_rate
 
 
-def get_exit_multiple(symbol: str):
+def get_exit_multiple(symbol: str) -> float:
+    """
+    Gets an exit multiple (terminal value).
+
+    :param symbol: ticker  Not used
+    :return: avg. P/E ratio for S&P500 companies
+    """
     # http://people.stern.nyu.edu/adamodar/podcasts/valUGspr17/session21.pdf
-    # TODO: implement
-    return 36.0
+
+    f = None
+    date = datetime.today().date()
+    while f is None:
+        try:
+            f = open(f"{get_project_root()}/output/fundamentals/{date}_fundamentals.xlsx", "rb")
+        except IOError:
+            date = date - timedelta(days=1)
+
+    print(f"opened {f.name} for exit multiple")
+    df = pd.read_excel(f, index_col=0)
+
+    f.close()
+    return df['peRatio'].mean()
 
 
 def calc_capm(access_token, stock_fundamentals: dict):
