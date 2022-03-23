@@ -28,6 +28,8 @@ def get_growth_rate(symbol):
             eps_trailing_5yrs = tr.contents[1].contents[0].text
 
     # TODO: exception handling
+    if 'eps_forward_5yrs' not in locals():
+        return None
     growth_rate = float(eps_forward_5yrs[:-1])
     print(f"retrieved growth_rate: {growth_rate}")
     if growth_rate > 5.99:
@@ -121,6 +123,10 @@ def calc_intrinsic_value(access_token, symbol: str):
     expected_annual_ror = calc_capm(access_token, fundamentals)
     years_of_growth = 2  # TODO: change
 
+    # NULL check maybe TODO relocate?
+    if eps_growth_rate is None:
+        return None
+
     eps_ttm = fundamentals['epsTTM']
     intrinsic_value = (
             (eps_ttm * pow(1 + (eps_growth_rate / 100), years_of_growth)) * exit_multiple /
@@ -133,3 +139,32 @@ def calc_intrinsic_value(access_token, symbol: str):
         'last_price': current_price,
         'margin_of_safety': (intrinsic_value - current_price) / intrinsic_value,
     }
+
+
+def build_intrinsic_values(access_token, symbols: list):
+    """
+    Calculates the intrinsic value of all the stocks in the given range.
+
+    Intrinsic value equation inputs are determined in underlying functions.
+    :param access_token: Active (30 min.) TD Ameritrade access_token
+    :param symbols: list - ticker symbols to calculate for
+    :return:
+    """
+    rows = []
+    for symbol in symbols:
+        result_dict = calc_intrinsic_value(access_token, symbol)
+        if result_dict is None:
+            continue  # skipping failed calculation
+        result_dict['symbol'] = symbol
+        rows.append(result_dict)
+
+    df = pd.DataFrame(rows)
+    df.to_excel(os.path.join(get_project_root(),
+                             "output/intrinsic_values", f"{datetime.today().date()}_intrinsic-values.xlsx"))
+    f = open("time.json", "r")
+    f_contents = json.load(f)
+    f.close()
+    f_contents['intrinsic_values'] = {"last_built": f"{datetime.today().date()}"}
+    f = open("time.json", "w")
+    f.write(json.dumps(f_contents, indent=4))
+    f.close()

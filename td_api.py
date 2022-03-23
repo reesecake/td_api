@@ -6,7 +6,7 @@ from datetime import datetime
 
 from dotenv import load_dotenv
 
-from intrinsic_value import calc_intrinsic_value
+from intrinsic_value import calc_intrinsic_value, build_intrinsic_values
 from util.Data import get_fundamentals, build_fundamentals_df
 from util.IndexInfo import get_spy
 
@@ -91,7 +91,8 @@ def main():
     # quoteRequest(access_token, "PYPL")  # example quote
     # print(calc_intrinsic_value(access_token, 'FISV'))
     # print(get_spy())
-    build_fundamentals_df(access_token)
+    # build_fundamentals_df(access_token)
+    build_intrinsic_values(access_token, get_spy()['Symbol'].tolist()[:50])
 
 
 if __name__ == '__main__':
